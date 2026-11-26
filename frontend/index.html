@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#183e32">
+  <title>Avalia — Avaliações de aprendizagem</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div id="boot" class="boot" role="status">Preparando seu espaço…</div>
+
+  <main id="login-view" class="login-layout" hidden>
+    <section class="login-side">
+      <a class="brand" href="/" aria-label="Avalia, início"><span class="brand-mark">a<span>•</span></span>Avalia</a>
+      <div class="login-content">
+        <p class="eyebrow">UM ESPAÇO PARA APRENDER</p>
+        <h1>Bom ter você<br>por aqui.</h1>
+        <p class="muted login-description">Entre na sua conta para continuar.</p>
+        <form id="login-form">
+          <label for="email">E-mail</label>
+          <input id="email" name="email" type="email" autocomplete="username" placeholder="seu.email@exemplo.com" required>
+          <label for="senha">Senha</label>
+          <input id="senha" name="senha" type="password" autocomplete="current-password" placeholder="Sua senha" required>
+          <p id="login-error" class="form-error" role="alert" hidden></p>
+          <button id="login-submit" class="button primary full" type="submit">Entrar <span aria-hidden="true">↗</span></button>
+        </form>
+      </div>
+      <p class="login-footer">Avaliações de aprendizagem</p>
+    </section>
+    <aside class="login-art" aria-label="Da pergunta ao aprendizado">
+      <span class="art-label">CURIOSIDADE É O PONTO DE PARTIDA.</span>
+      <div class="orbit" aria-hidden="true"><span class="orbit-inner"></span><span class="orbit-dot dot-one"></span><span class="orbit-dot dot-two"></span><span class="orbit-star">✳</span></div>
+      <div class="art-copy"><span class="small-line"></span><h2>Da pergunta<br>ao aprendizado.</h2><p>Boas questões abrem caminhos.<br>Cada resposta é um próximo passo.</p></div>
+      <span class="art-number" aria-hidden="true">01 — ∞</span>
+    </aside>
+  </main>
+
+  <div id="workspace" class="workspace" hidden>
+    <aside class="sidebar">
+      <a class="brand" href="/"><span class="brand-mark">a<span>•</span></span>Avalia</a>
+      <p class="nav-label">SEU ESPAÇO</p>
+      <nav aria-label="Principal"><a id="questions-nav" class="nav-item active" href="#questoes"><span aria-hidden="true">▤</span> Banco de questões</a><span id="student-nav" class="nav-item active" hidden>Área do aluno</span></nav>
+      <div class="sidebar-note"><span class="note-icon" aria-hidden="true">✳</span><p>Aprender começa com<br>uma boa pergunta.</p></div>
+      <div class="account"><span id="avatar" class="avatar" aria-hidden="true"></span><div><strong id="account-name"></strong><span id="account-role"></span></div><button id="logout" class="icon-button" type="button" aria-label="Sair da conta" title="Sair da conta">↪</button></div>
+    </aside>
+    <main class="main-content">
+      <div class="topline"><span>Avaliações de aprendizagem</span><span class="live-label"><span aria-hidden="true"></span>Seu espaço de ensino</span></div>
+      <section id="teacher-view" aria-labelledby="page-title">
+        <header class="page-header"><div><p class="eyebrow">ENSINAR, UMA QUESTÃO DE CADA VEZ</p><h1 id="page-title">Banco de questões<span>.</span></h1><p class="muted">Organize suas ideias. Crie perguntas que fazem pensar.</p></div><button id="new-question" class="button primary" type="button"><span aria-hidden="true">＋</span> Nova questão</button></header>
+        <section class="collection" aria-label="Questões cadastradas">
+          <div class="collection-header"><div><h2>Sua coleção de perguntas</h2><p id="list-caption" class="muted" aria-live="polite"></p></div><label class="filter-label" for="type-filter">Mostrar<select id="type-filter"><option value="">Todos os tipos</option><option value="MULTIPLA_ESCOLHA">Múltipla escolha</option><option value="TEXTO_LIVRE">Texto livre</option></select></label></div>
+          <p id="list-error" class="form-error" role="alert" hidden></p>
+          <div id="questions-list" class="questions-list" aria-live="polite"></div>
+          <footer class="pagination"><button id="previous-page" class="button quiet" type="button">← Anterior</button><span id="page-indicator"></span><button id="next-page" class="button quiet" type="button">Próxima →</button></footer>
+        </section>
+      </section>
+      <section id="student-view" class="student-view" hidden><p class="eyebrow">SEU ESPAÇO DE APRENDIZAGEM</p><h1>Olá, <span id="student-name"></span>.</h1><p class="muted">Você entrou na sua conta de aluno.</p><div class="student-notice"><span aria-hidden="true">✳</span><h2>Cada pergunta, uma descoberta.</h2><p>O banco de questões é um espaço exclusivo dos professores.</p></div></section>
+    </main>
+  </div>
+
+  <dialog id="question-dialog" aria-labelledby="dialog-title">
+    <form id="question-form">
+      <header class="dialog-header"><div><p class="eyebrow">UMA NOVA IDEIA</p><h2 id="dialog-title">Criar questão</h2></div><button id="close-dialog" class="icon-button" type="button" aria-label="Fechar formulário">✕</button></header>
+      <div class="dialog-body">
+        <label for="question-type">Tipo de questão</label><select id="question-type" name="tipo"><option value="MULTIPLA_ESCOLHA">Múltipla escolha</option><option value="TEXTO_LIVRE">Texto livre</option></select>
+        <label for="statement">Enunciado</label><textarea id="statement" name="enunciado" rows="4" placeholder="O que você quer perguntar?" required></textarea>
+        <fieldset id="alternatives-section"><legend>Alternativas</legend><p class="muted field-help">Marque o círculo da resposta correta.</p><div id="alternatives"></div><button id="add-alternative" class="text-button" type="button">＋ Adicionar alternativa</button></fieldset>
+        <p id="text-help" class="text-help" hidden>A resposta será escrita pelo aluno e corrigida pelo professor.</p>
+        <p id="question-error" class="form-error" role="alert" hidden></p>
+      </div>
+      <footer class="dialog-footer"><button id="cancel-dialog" class="button quiet" type="button">Cancelar</button><button id="save-question" class="button primary" type="submit">Salvar questão <span aria-hidden="true">↗</span></button></footer>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>
