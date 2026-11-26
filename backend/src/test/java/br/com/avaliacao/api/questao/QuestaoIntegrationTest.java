@@ -1,5 +1,10 @@
 package br.com.avaliacao.api.questao;
 
+import br.com.avaliacao.domain.usuario.CredenciaisUsuario;
+import br.com.avaliacao.infrastructure.security.UsuarioPrincipal;
+import br.com.avaliacao.application.usuario.ConfigurarSenhasDemoService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mock.web.MockHttpSession;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
@@ -18,7 +23,9 @@ import java.nio.file.Path;
 import java.sql.DriverManager;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -35,6 +42,8 @@ class QuestaoIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired JdbcTemplate jdbc;
+    @Autowired PasswordEncoder encoder;
+    @Autowired ConfigurarSenhasDemoService senhasDemo;
 
     @DynamicPropertySource
     static void configurar(DynamicPropertyRegistry registry) throws Exception {
@@ -76,7 +85,7 @@ class QuestaoIntegrationTest {
 
     @Test
     void cadastraObjetivaComAlternativasOrdenadas() throws Exception {
-        mvc.perform(post("/api/questoes").contentType("application/json").content("""
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).contentType("application/json").content("""
                 {"autorId":1,"tipo":"MULTIPLA_ESCOLHA","enunciado":"Questao criada pela API",
                  "alternativas":[{"texto":"CREATE TABLE","correta":true},{"texto":"DELETE","correta":false}]}
                 """))
@@ -90,7 +99,7 @@ class QuestaoIntegrationTest {
 
     @Test
     void cadastraTextoLivreSemAlternativas() throws Exception {
-        mvc.perform(post("/api/questoes").contentType("application/json").content("""
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).contentType("application/json").content("""
                 {"autorId":2,"tipo":"TEXTO_LIVRE","enunciado":"Explique uma transacao."}
                 """))
                 .andExpect(status().isCreated())
@@ -99,7 +108,7 @@ class QuestaoIntegrationTest {
 
     @Test
     void paginaQuestoesSemCortarAlternativas() throws Exception {
-        mvc.perform(get("/api/questoes").param("limite", "2").param("deslocamento", "1"))
+        mvc.perform(get("/api/questoes").with(user(professor())).param("limite", "2").param("deslocamento", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].id").value(2))
@@ -109,7 +118,7 @@ class QuestaoIntegrationTest {
 
     @Test
     void filtraPorTipo() throws Exception {
-        mvc.perform(get("/api/questoes").param("tipo", "TEXTO_LIVRE").param("limite", "3"))
+        mvc.perform(get("/api/questoes").with(user(professor())).param("tipo", "TEXTO_LIVRE").param("limite", "3"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].id").value(21))
@@ -118,7 +127,7 @@ class QuestaoIntegrationTest {
 
     @Test
     void rejeitaGabaritoAmbiguoSemGravarQuestao() throws Exception {
-        mvc.perform(post("/api/questoes").contentType("application/json").content("""
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).contentType("application/json").content("""
                 {"autorId":1,"tipo":"MULTIPLA_ESCOLHA","enunciado":"Invalida",
                  "alternativas":[{"texto":"A","correta":true},{"texto":"B","correta":true}]}
                 """))
@@ -128,24 +137,24 @@ class QuestaoIntegrationTest {
 
     @Test
     void rejeitaAlunoComoAutor() throws Exception {
-        mvc.perform(post("/api/questoes").contentType("application/json").content("""
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).with(user(aluno())).contentType("application/json").content("""
                 {"autorId":3,"tipo":"TEXTO_LIVRE","enunciado":"Nao pode"}
                 """))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isForbidden());
         assertEquals(30, quantidade("questoes"));
     }
 
     @Test
     void rejeitaEntradaMalformada() throws Exception {
-        mvc.perform(post("/api/questoes").contentType("application/json").content("""
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).contentType("application/json").content("""
                 {"autorId":1,"tipo":"INEXISTENTE","enunciado":"Invalida"}
                 """))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/api/questoes").contentType("application/json").content("""
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).contentType("application/json").content("""
                 {"autorId":1,"tipo":"MULTIPLA_ESCOLHA","enunciado":"Invalida","alternativas":[null]}
                 """))
                 .andExpect(status().isBadRequest());
-        mvc.perform(get("/api/questoes").param("limite", "101"))
+        mvc.perform(get("/api/questoes").with(user(professor())).param("limite", "101"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -165,7 +174,7 @@ class QuestaoIntegrationTest {
                 FOR EACH ROW EXECUTE FUNCTION falhar_alternativa_teste();
                 """);
         try {
-            mvc.perform(post("/api/questoes").contentType("application/json").content("""
+            mvc.perform(post("/api/questoes").with(user(professor())).with(csrf()).contentType("application/json").content("""
                     {"autorId":1,"tipo":"MULTIPLA_ESCOLHA","enunciado":"Deve reverter tudo",
                      "alternativas":[{"texto":"Primeira","correta":true},
                                      {"texto":"forcar_erro_integracao","correta":false}]}
@@ -177,6 +186,91 @@ class QuestaoIntegrationTest {
         } finally {
             jdbc.execute("DROP TRIGGER falhar_alternativa_teste ON alternativas; DROP FUNCTION falhar_alternativa_teste()");
         }
+    }
+
+    @Test
+    void exigeLoginECsrf() throws Exception {
+        mvc.perform(get("/api/questoes")).andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/questoes").with(user(professor())).contentType("application/json").content("{}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/auth/csrf")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isNotEmpty());
+    }
+
+    @Test
+    void loginMantemSessaoELogoutEncerraAcesso() throws Exception {
+        String senha = UUID.randomUUID().toString();
+        jdbc.update("UPDATE usuarios SET senha_hash = ? WHERE id = 1", encoder.encode(senha));
+        var resultado = mvc.perform(post("/api/auth/login").with(csrf())
+                .param("email", "  CLARA@EXAMPLE.TEST  ").param("senha", senha))
+                .andExpect(status().isNoContent()).andReturn();
+        var sessao = (MockHttpSession) resultado.getRequest().getSession(false);
+        assertNotNull(sessao);
+        mvc.perform(get("/api/auth/me").session(sessao))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.perfil").value("PROFESSOR"))
+                .andExpect(jsonPath("$.senhaHash").doesNotExist());
+        mvc.perform(post("/api/auth/logout").session(sessao).with(csrf()))
+                .andExpect(status().isNoContent());
+        assertTrue(sessao.isInvalid());
+        mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void loginInvalidoNaoRevelaExistenciaDoUsuario() throws Exception {
+        for (String email : new String[]{"clara@example.test", "naoexiste@example.test"}) {
+            mvc.perform(post("/api/auth/login").with(csrf()).param("email", email)
+                    .param("senha", UUID.randomUUID().toString()))
+                    .andExpect(status().isUnauthorized())
+                    .andExpect(jsonPath("$.detail").value("E-mail ou senha inválidos."));
+        }
+    }
+
+    @Test
+    void alunoEntraMasNaoAcessaGabarito() throws Exception {
+        String senha = UUID.randomUUID().toString();
+        jdbc.update("UPDATE usuarios SET senha_hash = ? WHERE id = 3", encoder.encode(senha));
+        var resultado = mvc.perform(post("/api/auth/login").with(csrf())
+                .param("email", "aluno01@example.test").param("senha", senha))
+                .andExpect(status().isNoContent()).andReturn();
+        var sessao = (MockHttpSession) resultado.getRequest().getSession(false);
+        mvc.perform(get("/api/auth/me").session(sessao))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.perfil").value("ALUNO"));
+        mvc.perform(get("/api/questoes").session(sessao)).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void usaAutorDaSessaoIgnorandoAutorEnviadoPeloCliente() throws Exception {
+        mvc.perform(post("/api/questoes").with(user(professor())).with(csrf())
+                .contentType("application/json").content("""
+                {"autorId":3,"tipo":"TEXTO_LIVRE","enunciado":"Quem e o autor?"}
+                """))
+                .andExpect(status().isCreated()).andExpect(jsonPath("$.autorId").value(1));
+    }
+
+    @Test
+    void contaQuestoesPorTipo() throws Exception {
+        mvc.perform(get("/api/questoes/contagem").with(user(professor())).param("tipo", "TEXTO_LIVRE"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(10));
+    }
+
+    @Test
+    void configuraSomenteContasDeDemonstracaoSemSenha() {
+        String senhaExistente = encoder.encode(UUID.randomUUID().toString());
+        jdbc.update("UPDATE usuarios SET senha_hash = ? WHERE id = 1", senhaExistente);
+        String senhaDemo = UUID.randomUUID().toString();
+        assertEquals(21, senhasDemo.configurar(senhaDemo));
+        assertEquals(0, senhasDemo.configurar(UUID.randomUUID().toString()));
+        assertEquals(senhaExistente, jdbc.queryForObject("SELECT senha_hash FROM usuarios WHERE id = 1", String.class));
+        assertTrue(encoder.matches(senhaDemo, jdbc.queryForObject("SELECT senha_hash FROM usuarios WHERE id = 3", String.class)));
+    }
+
+    private UsuarioPrincipal professor() {
+        return new UsuarioPrincipal(new CredenciaisUsuario(1, "Professora Clara", "clara@example.test", null, "PROFESSOR"));
+    }
+
+    private UsuarioPrincipal aluno() {
+        return new UsuarioPrincipal(new CredenciaisUsuario(3, "Ana Souza", "aluno01@example.test", null, "ALUNO"));
     }
 
     private int quantidade(String tabela) {

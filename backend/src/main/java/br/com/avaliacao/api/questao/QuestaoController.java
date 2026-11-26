@@ -2,6 +2,8 @@ package br.com.avaliacao.api.questao;
 
 import br.com.avaliacao.application.questao.QuestaoService;
 import br.com.avaliacao.domain.questao.TipoQuestao;
+import br.com.avaliacao.domain.usuario.UsuarioAtual;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,8 +27,9 @@ public class QuestaoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public QuestaoResponse cadastrar(@Valid @RequestBody CriarQuestaoRequest request) {
-        return QuestaoResponse.de(service.cadastrar(request.autorId(), request.tipo(),
+    public QuestaoResponse cadastrar(@Valid @RequestBody CriarQuestaoRequest request,
+                                    @AuthenticationPrincipal(expression = "usuario") UsuarioAtual usuario) {
+        return QuestaoResponse.de(service.cadastrar(usuario.id(), request.tipo(),
                 request.enunciado(), request.alternativasDominio()));
     }
 
@@ -36,4 +39,11 @@ public class QuestaoController {
                                        @RequestParam(defaultValue = "0") int deslocamento) {
         return service.listar(tipo, limite, deslocamento).stream().map(QuestaoResponse::de).toList();
     }
+
+    @GetMapping("/contagem")
+    public ContagemResponse contar(@RequestParam(required = false) TipoQuestao tipo) {
+        return new ContagemResponse(service.contar(tipo));
+    }
+
+    public record ContagemResponse(long total) { }
 }

@@ -30,6 +30,11 @@ public class QuestaoService {
     }
 
     @Transactional(readOnly = true)
+    public long contar(TipoQuestao tipo) {
+        return questoes.contar(tipo);
+    }
+
+    @Transactional(readOnly = true)
     public List<Questao> listar(TipoQuestao tipo, int limite, int deslocamento) {
         if (limite < 1 || limite > 100 || deslocamento < 0) {
             throw new IllegalArgumentException("Use limite entre 1 e 100 e deslocamento não negativo.");

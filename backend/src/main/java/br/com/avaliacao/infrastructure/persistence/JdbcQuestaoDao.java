@@ -76,6 +76,16 @@ public class JdbcQuestaoDao implements QuestaoRepository {
         }, codigo, codigo, limite, deslocamento);
     }
 
+    @Override
+    public long contar(TipoQuestao tipo) {
+        String codigo = tipo == null ? "" : tipo.name();
+        return Objects.requireNonNull(jdbc.queryForObject("""
+                SELECT COUNT(*) FROM questoes q
+                JOIN tipos_questao tq ON tq.id = q.tipo_questao_id
+                WHERE (? = '' OR tq.codigo = ?)
+                """, Long.class, codigo, codigo));
+    }
+
     private static final class RegistroQuestao {
         private final long id;
         private final long autorId;
