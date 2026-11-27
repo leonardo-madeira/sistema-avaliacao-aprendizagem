@@ -45,3 +45,29 @@ SELECT resumo.*,
        (SELECT SUM(r.media_percentual * r.notas_consideradas) / NULLIF(SUM(r.notas_consideradas), 0)
         FROM resumo r) AS media_geral_percentual
 FROM resumo ORDER BY inicio_em DESC, avaliacao_id DESC;
+
+-- relatorio: questoes
+WITH filtradas AS (
+    SELECT a.id FROM avaliacoes a
+    WHERE a.professor_id = :professorId AND a.status = 'PUBLICADA'
+      AND (CAST(:inicio AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) >= CAST(:inicio AS DATE))
+      AND (CAST(:fim AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= CAST(:fim AS DATE))
+      AND LOWER(a.titulo) LIKE '%' || LOWER(COALESCE(:busca, '')) || '%'
+      AND (:todasAvaliacoes OR a.id IN (:avaliacaoIds))
+), contagens AS (
+    SELECT q.id AS questao_id, q.enunciado, COUNT(p.id) AS oportunidades,
+           COUNT(r.id) AS respondidas, COUNT(p.id) - COUNT(r.id) AS em_branco,
+           SUM(CASE WHEN r.id IS NULL OR r.nota_obtida = 0 THEN 1 ELSE 0 END) AS erros
+    FROM filtradas f JOIN avaliacao_questoes aq ON aq.avaliacao_id = f.id
+    JOIN questoes q ON q.id = aq.questao_id
+    JOIN tipos_questao tq ON tq.id = q.tipo_questao_id AND tq.codigo = 'MULTIPLA_ESCOLHA'
+    JOIN participacoes p ON p.avaliacao_id = f.id AND p.entregue_em IS NOT NULL
+    LEFT JOIN respostas r ON r.participacao_id = p.id AND r.avaliacao_questao_id = aq.id
+    GROUP BY q.id, q.enunciado
+    HAVING COUNT(p.id) >= :minimoRespostas
+), taxas AS (
+    SELECT contagens.*, 100.0 * erros / oportunidades AS percentual_erros FROM contagens
+)
+SELECT RANK() OVER (ORDER BY percentual_erros DESC) AS posicao, taxas.*
+FROM taxas ORDER BY percentual_erros DESC, erros DESC, questao_id
+FETCH FIRST :limite ROWS ONLY;
