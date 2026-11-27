@@ -10,6 +10,7 @@
   <script src="/app.js" defer></script>
   <script src="/avaliacoes.js" defer></script>
   <script src="/realizacao.js" defer></script>
+  <script src="/correcao.js" defer></script>
 </head>
 <body>
   <div id="boot" class="boot" role="status">Preparando seu espaço…</div>
@@ -116,6 +117,8 @@
       <footer class="dialog-footer"><button id="cancel-prova" class="button quiet" type="button">Fechar</button><button id="save-prova" class="button quiet" type="submit" data-action="save">Salvar respostas</button><button id="submit-prova" class="button primary" type="submit" data-action="deliver">Entregar avaliação ↗</button></footer>
     </form>
   </dialog>
+  <dialog id="entregas-dialog" class="evaluation-dialog" aria-labelledby="entregas-title"><header class="dialog-header"><div><p class="eyebrow">ACOMPANHE CADA APRENDIZAGEM</p><h2 id="entregas-title">Respostas dos alunos</h2></div><button id="close-entregas" class="icon-button" type="button" aria-label="Fechar entregas">✕</button></header><div class="dialog-body"><p id="entregas-error" class="form-error" role="alert" hidden></p><div id="entregas-list"></div></div></dialog>
+  <dialog id="correcao-dialog" class="evaluation-dialog" aria-labelledby="correcao-title"><form id="correcao-form"><header class="dialog-header"><div><p class="eyebrow">CADA RESPOSTA CONTA</p><h2 id="correcao-title">Correção</h2></div><button id="close-correcao" class="icon-button" type="button" aria-label="Fechar correção">✕</button></header><div class="dialog-body"><p id="correcao-subtitle" class="muted"></p><p class="muted field-help">Atribua notas aos textos. Você pode salvar uma parte e continuar depois.</p><fieldset id="correcao-fields"><div id="correcao-questions"></div></fieldset><p id="correcao-error" class="form-error" role="alert" hidden></p></div><footer class="dialog-footer"><button id="cancel-correcao" class="button quiet" type="button">Fechar</button><button id="save-correcao" class="button primary" type="submit">Salvar notas ↗</button></footer></form></dialog>
   <div id="toast" class="toast" role="status" hidden></div>
 </body>
 </html>

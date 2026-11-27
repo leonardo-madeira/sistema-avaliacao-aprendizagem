@@ -55,6 +55,12 @@ function renderEvaluations() {
     button.type = 'button';
     button.addEventListener('click', () => openEvaluation(item.id));
     card.append(button);
+    if (item.status === 'PUBLICADA') {
+      const correction = element('button', 'button quiet correction-button', 'Respostas dos alunos →');
+      correction.type = 'button';
+      correction.addEventListener('click', () => openEntregas(item.id, item.titulo));
+      card.append(correction);
+    }
     return card;
   }));
   if (!list.length) $('evaluations-list').append(element('p', 'empty-state', 'Nenhuma avaliação por aqui. Comece com um novo rascunho.'));
