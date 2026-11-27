@@ -50,6 +50,8 @@ function showLogin() {
   $('workspace').hidden = true;
   $('login-view').hidden = false;
   if ($('question-dialog').open) $('question-dialog').close();
+  if ($('evaluation-dialog').open) $('evaluation-dialog').close();
+  if (typeof resetEvaluations === 'function') resetEvaluations();
   $('questions-list').replaceChildren();
   $('senha').value = '';
 }
@@ -67,10 +69,27 @@ function showWorkspace(user) {
   $('teacher-view').hidden = !teacher;
   $('student-view').hidden = teacher;
   $('questions-nav').hidden = !teacher;
+  $('evaluations-nav').hidden = !teacher;
+  $('evaluations-view').hidden = true;
   $('student-nav').hidden = teacher;
   $('student-name').textContent = user.nome.split(' ')[0];
-  if (teacher) loadQuestions();
+  if (teacher) navigate(location.hash === '#avaliacoes' ? 'avaliacoes' : 'questoes');
 }
+
+function navigate(view) {
+  if (state.user?.perfil !== 'PROFESSOR') return;
+  state.view = view;
+  const evaluations = view === 'avaliacoes';
+  $('teacher-view').hidden = evaluations;
+  $('evaluations-view').hidden = !evaluations;
+  $('questions-nav').classList.toggle('active', !evaluations);
+  $('evaluations-nav').classList.toggle('active', evaluations);
+  if (evaluations) {
+    if (typeof loadEvaluations === 'function') loadEvaluations();
+  } else loadQuestions();
+}
+
+window.addEventListener('hashchange', () => navigate(location.hash === '#avaliacoes' ? 'avaliacoes' : 'questoes'));
 
 $('login-form').addEventListener('submit', async (event) => {
   event.preventDefault();

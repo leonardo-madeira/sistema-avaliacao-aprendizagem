@@ -8,6 +8,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
+  <script src="/avaliacoes.js" defer></script>
 </head>
 <body>
   <div id="boot" class="boot" role="status">Preparando seu espaço…</div>
@@ -42,7 +43,7 @@
     <aside class="sidebar">
       <a class="brand" href="/"><span class="brand-mark">a<span>•</span></span>Avalia</a>
       <p class="nav-label">SEU ESPAÇO</p>
-      <nav aria-label="Principal"><a id="questions-nav" class="nav-item active" href="#questoes"><span aria-hidden="true">▤</span> Banco de questões</a><span id="student-nav" class="nav-item active" hidden>Área do aluno</span></nav>
+      <nav aria-label="Principal"><a id="questions-nav" class="nav-item active" href="#questoes"><span aria-hidden="true">▤</span> Banco de questões</a><a id="evaluations-nav" class="nav-item" href="#avaliacoes" hidden><span aria-hidden="true">▧</span> Avaliações</a><span id="student-nav" class="nav-item active" hidden>Área do aluno</span></nav>
       <div class="sidebar-note"><span class="note-icon" aria-hidden="true">✳</span><p>Aprender começa com<br>uma boa pergunta.</p></div>
       <div class="account"><span id="avatar" class="avatar" aria-hidden="true"></span><div><strong id="account-name"></strong><span id="account-role"></span></div><button id="logout" class="icon-button" type="button" aria-label="Sair da conta" title="Sair da conta">↪</button></div>
     </aside>
@@ -55,6 +56,14 @@
           <p id="list-error" class="form-error" role="alert" hidden></p>
           <div id="questions-list" class="questions-list" aria-live="polite"></div>
           <footer class="pagination"><button id="previous-page" class="button quiet" type="button">← Anterior</button><span id="page-indicator"></span><button id="next-page" class="button quiet" type="button">Próxima →</button></footer>
+        </section>
+      </section>
+      <section id="evaluations-view" aria-labelledby="evaluations-title" hidden>
+        <header class="page-header"><div><p class="eyebrow">IDEIAS QUE VIRAM APRENDIZADO</p><h1 id="evaluations-title">Suas avaliações<span>.</span></h1><p class="muted">Escolha as questões. Dê espaço para novas descobertas.</p></div><button id="new-evaluation" class="button primary" type="button">＋ Nova avaliação</button></header>
+        <section class="collection" aria-label="Avaliações do professor">
+          <div class="collection-header"><div><h2>Do rascunho à próxima aula</h2><p id="evaluations-caption" class="muted" aria-live="polite"></p></div><label class="filter-label" for="evaluation-filter">Mostrar<select id="evaluation-filter"><option value="">Todas as avaliações</option><option value="RASCUNHO">Rascunhos</option><option value="PUBLICADA">Publicadas</option></select></label></div>
+          <p id="evaluations-error" class="form-error" role="alert" hidden></p>
+          <div id="evaluations-list" class="evaluations-list" aria-live="polite"></div>
         </section>
       </section>
       <section id="student-view" class="student-view" hidden><p class="eyebrow">SEU ESPAÇO DE APRENDIZAGEM</p><h1>Olá, <span id="student-name"></span>.</h1><p class="muted">Você entrou na sua conta de aluno.</p><div class="student-notice"><span aria-hidden="true">✳</span><h2>Cada pergunta, uma descoberta.</h2><p>O banco de questões é um espaço exclusivo dos professores.</p></div></section>
@@ -72,6 +81,29 @@
         <p id="question-error" class="form-error" role="alert" hidden></p>
       </div>
       <footer class="dialog-footer"><button id="cancel-dialog" class="button quiet" type="button">Cancelar</button><button id="save-question" class="button primary" type="submit">Salvar questão <span aria-hidden="true">↗</span></button></footer>
+    </form>
+  </dialog>
+  <dialog id="evaluation-dialog" class="evaluation-dialog" aria-labelledby="evaluation-dialog-title">
+    <form id="evaluation-form">
+      <header class="dialog-header"><div><p class="eyebrow">UM NOVO PASSO NA APRENDIZAGEM</p><h2 id="evaluation-dialog-title">Montar avaliação</h2></div><button id="close-evaluation" class="icon-button" type="button" aria-label="Fechar avaliação">✕</button></header>
+      <fieldset id="evaluation-fields" class="dialog-body evaluation-fields">
+        <label for="evaluation-name">Título</label><input id="evaluation-name" maxlength="200" required placeholder="Ex.: Prova 1 de Banco de Dados">
+        <label for="evaluation-description">Descrição</label><textarea id="evaluation-description" rows="2" placeholder="Orientações para os alunos"></textarea>
+        <div class="date-fields"><div><label for="evaluation-start">Início</label><input id="evaluation-start" type="datetime-local" required></div><div><label for="evaluation-end">Fim</label><input id="evaluation-end" type="datetime-local" required></div></div>
+        <section class="builder-section" aria-labelledby="builder-questions-title">
+          <div class="builder-heading"><h3 id="builder-questions-title">01. Questões e pontuação</h3><span id="evaluation-total" class="builder-counter"></span></div>
+          <p class="muted field-help">A ordem abaixo será usada na avaliação. A pontuação vale somente para esta prova.</p>
+          <div id="selected-questions" class="selected-questions"></div>
+          <div id="question-library"><label for="question-search">Adicionar do banco de questões</label><input id="question-search" type="search" placeholder="Buscar pelo enunciado"><div id="question-options" class="picker-list"></div></div>
+        </section>
+        <section class="builder-section" aria-labelledby="builder-students-title">
+          <div class="builder-heading"><h3 id="builder-students-title">02. Participantes</h3><span id="student-counter" class="builder-counter"></span></div>
+          <div id="student-tools"><label for="student-search">Buscar aluno</label><input id="student-search" type="search" placeholder="Nome ou e-mail"><div class="selection-tools"><button id="select-students" class="text-button" type="button">Selecionar exibidos</button><button id="clear-students" class="text-button" type="button">Limpar seleção</button></div></div>
+          <div id="student-options" class="picker-list student-options"></div>
+        </section>
+      </fieldset>
+      <div class="evaluation-feedback"><p id="evaluation-readonly" class="text-help" hidden>Avaliação publicada. As questões, os valores e os participantes estão definidos.</p><p id="evaluation-publish-help" class="muted field-help">Depois de publicar, as questões, a pontuação e os participantes não poderão ser alterados.</p><p id="evaluation-error" class="form-error" role="alert" hidden></p></div>
+      <footer class="dialog-footer"><button id="cancel-evaluation" class="button quiet" type="button">Cancelar</button><button id="save-evaluation" class="button quiet" type="submit" data-action="save">Salvar rascunho</button><button id="publish-evaluation" class="button primary" type="submit" data-action="publish">Publicar avaliação ↗</button></footer>
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" hidden></div>
