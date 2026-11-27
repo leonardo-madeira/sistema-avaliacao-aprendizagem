@@ -38,10 +38,12 @@ public class SecurityConfiguration {
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/", "/index.html", "/app.js", "/avaliacoes.js", "/styles.css", "/favicon.svg",
                                 "/realizacao.js", "/correcao.js",
+                                "/relatorios.js",
                                 "/api/auth/csrf", "/api/auth/login").permitAll()
                         .requestMatchers("/api/questoes", "/api/questoes/**").hasRole("PROFESSOR")
                         .requestMatchers("/api/avaliacoes", "/api/avaliacoes/**", "/api/alunos").hasRole("PROFESSOR")
                         .requestMatchers("/api/correcoes", "/api/correcoes/**").hasRole("PROFESSOR")
+                        .requestMatchers("/api/relatorios", "/api/relatorios/**").hasRole("PROFESSOR")
                         .requestMatchers("/api/minhas-avaliacoes", "/api/minhas-avaliacoes/**").hasRole("ALUNO")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
