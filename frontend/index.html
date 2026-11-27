@@ -11,6 +11,7 @@
   <script src="/avaliacoes.js" defer></script>
   <script src="/realizacao.js" defer></script>
   <script src="/correcao.js" defer></script>
+  <script src="/relatorios.js" defer></script>
 </head>
 <body>
   <div id="boot" class="boot" role="status">Preparando seu espaço…</div>
@@ -45,7 +46,7 @@
     <aside class="sidebar">
       <a class="brand" href="/"><span class="brand-mark">a<span>•</span></span>Avalia</a>
       <p class="nav-label">SEU ESPAÇO</p>
-      <nav aria-label="Principal"><a id="questions-nav" class="nav-item active" href="#questoes"><span aria-hidden="true">▤</span> Banco de questões</a><a id="evaluations-nav" class="nav-item" href="#avaliacoes" hidden><span aria-hidden="true">▧</span> Avaliações</a><span id="student-nav" class="nav-item active" hidden>Área do aluno</span></nav>
+      <nav aria-label="Principal"><a id="questions-nav" class="nav-item active" href="#questoes"><span aria-hidden="true">▤</span> Banco de questões</a><a id="evaluations-nav" class="nav-item" href="#avaliacoes" hidden><span aria-hidden="true">▧</span> Avaliações</a><a id="reports-nav" class="nav-item" href="#relatorios" hidden><span aria-hidden="true">▥</span> Relatórios</a><span id="student-nav" class="nav-item active" hidden>Área do aluno</span></nav>
       <div class="sidebar-note"><span class="note-icon" aria-hidden="true">✳</span><p>Aprender começa com<br>uma boa pergunta.</p></div>
       <div class="account"><span id="avatar" class="avatar" aria-hidden="true"></span><div><strong id="account-name"></strong><span id="account-role"></span></div><button id="logout" class="icon-button" type="button" aria-label="Sair da conta" title="Sair da conta">↪</button></div>
     </aside>
@@ -67,6 +68,26 @@
           <p id="evaluations-error" class="form-error" role="alert" hidden></p>
           <div id="evaluations-list" class="evaluations-list" aria-live="polite"></div>
         </section>
+      </section>
+      <section id="reports-view" aria-labelledby="reports-title" hidden>
+        <header class="page-header"><div><p class="eyebrow">ENTENDER PARA ENSINAR MELHOR</p><h1 id="reports-title">Além das notas<span>.</span></h1><p class="muted">Resultados, dificuldades e participação nas suas avaliações.</p></div></header>
+        <form id="reports-filter" class="report-filters">
+          <div><label for="report-start">De</label><input id="report-start" type="date"></div><div><label for="report-end">Até</label><input id="report-end" type="date"></div>
+          <div class="report-search"><label for="report-search">Título da avaliação</label><input id="report-search" type="search" maxlength="200" placeholder="Buscar uma avaliação"></div>
+          <div class="report-assessments"><label for="report-assessments">Avaliações publicadas</label><select id="report-assessments" multiple size="3" aria-describedby="report-assessments-help"></select><small id="report-assessments-help">Sem seleção, todas. Use Ctrl/Cmd para selecionar várias.</small></div>
+          <details class="advanced-filters"><summary>Ajustar notas e amostra</summary><div class="advanced-grid">
+            <div><label for="report-min-grade">Nota mínima (%)</label><input id="report-min-grade" type="number" min="0" max="100" step="0.01" value="0" required></div>
+            <div><label for="report-max-grade">Nota máxima (%)</label><input id="report-max-grade" type="number" min="0" max="100" step="0.01" value="100" required></div>
+            <div><label for="report-min-finals">Mínimo de notas consideradas</label><input id="report-min-finals" type="number" min="0" step="1" value="0" required></div>
+            <div><label for="report-min-samples">Mínimo de entregas por questão</label><input id="report-min-samples" type="number" min="1" step="1" value="1" required></div>
+          </div><p class="muted field-help">Faixa de notas e mínimo de notas se aplicam ao desempenho. A amostra de entregas se aplica ao ranking.</p></details>
+          <div class="report-filter-actions"><button id="reset-reports" class="button quiet" type="button">Limpar</button><button id="apply-reports" class="button primary" type="submit">Aplicar filtros ↗</button></div>
+        </form>
+        <p id="reports-error" class="form-error" role="alert" hidden></p><p id="reports-loading" class="muted" role="status" hidden>Calculando os resultados…</p>
+        <div class="report-tabs" role="tablist" aria-label="Tipo de relatório"><button id="tab-desempenho" role="tab" aria-controls="report-desempenho" aria-selected="true" data-report="desempenho" type="button">Desempenho</button><button id="tab-questoes" role="tab" aria-controls="report-questoes" aria-selected="false" data-report="questoes" type="button" tabindex="-1">Questões mais erradas</button><button id="tab-participacao" role="tab" aria-controls="report-participacao" aria-selected="false" data-report="participacao" type="button" tabindex="-1">Participação</button></div>
+        <section id="report-desempenho" class="collection report-panel" role="tabpanel" aria-labelledby="tab-desempenho"><header class="collection-header"><div><h2>Desempenho por avaliação</h2><p class="muted">Somente entregas com correção concluída e notas dentro da faixa escolhida.</p></div></header><div class="report-chart-area"><p id="report-benchmark" class="muted chart-legend"></p><div id="chart-desempenho" class="bar-chart" aria-label="Gráfico de médias por avaliação"></div></div><div id="table-desempenho" class="table-scroll"></div></section>
+        <section id="report-questoes" class="collection report-panel" role="tabpanel" aria-labelledby="tab-questoes" hidden><header class="collection-header"><div><h2>Onde estão as dificuldades?</h2><p class="muted">Objetivas em avaliações entregues. Respostas em branco também contam como erro.</p></div><label class="filter-label" for="report-limit">Mostrar<select id="report-limit"><option value="5">Top 5</option><option value="10" selected>Top 10</option><option value="20">Top 20</option><option value="50">Top 50</option></select></label></header><div class="report-chart-area"><div id="chart-questoes" class="bar-chart" aria-label="Gráfico de percentual de erros por questão"></div></div><div id="table-questoes" class="table-scroll"></div></section>
+        <section id="report-participacao" class="collection report-panel" role="tabpanel" aria-labelledby="tab-participacao" hidden><header class="collection-header"><div><h2>Quem já chegou até aqui?</h2><p class="muted">Pendentes inclui quem não iniciou e quem ainda não entregou.</p></div></header><div class="report-chart-area"><p class="chart-legend"><span class="legend-dot delivered"></span> Entregues <span class="legend-dot pending"></span> Pendentes</p><div id="chart-participacao" class="bar-chart" aria-label="Gráfico de entregas e pendências por avaliação"></div></div><div id="table-participacao" class="table-scroll"></div></section>
       </section>
       <section id="student-view" hidden>
         <header class="page-header"><div><p class="eyebrow">OLÁ, <span id="student-name"></span></p><h1>Suas avaliações<span>.</span></h1><p class="muted">Uma nova oportunidade de mostrar o que você aprendeu.</p></div></header>

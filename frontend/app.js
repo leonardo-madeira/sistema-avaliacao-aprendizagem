@@ -54,6 +54,7 @@ function showLogin() {
   if (typeof resetEvaluations === 'function') resetEvaluations();
   if (typeof resetRealizacao === 'function') resetRealizacao();
   if (typeof resetCorrecao === 'function') resetCorrecao();
+  if (typeof resetRelatorios === 'function') resetRelatorios();
   $('questions-list').replaceChildren();
   $('senha').value = '';
 }
@@ -72,27 +73,31 @@ function showWorkspace(user) {
   $('student-view').hidden = teacher;
   $('questions-nav').hidden = !teacher;
   $('evaluations-nav').hidden = !teacher;
+  $('reports-nav').hidden = !teacher;
   $('evaluations-view').hidden = true;
+  $('reports-view').hidden = true;
   $('student-nav').hidden = teacher;
   $('student-name').textContent = user.nome.split(' ')[0];
-  if (teacher) navigate(location.hash === '#avaliacoes' ? 'avaliacoes' : 'questoes');
+  if (teacher) navigate(viewFromHash());
   else if (typeof loadMinhasAvaliacoes === 'function') loadMinhasAvaliacoes();
 }
 
 function navigate(view) {
   if (state.user?.perfil !== 'PROFESSOR') return;
   state.view = view;
-  const evaluations = view === 'avaliacoes';
-  $('teacher-view').hidden = evaluations;
-  $('evaluations-view').hidden = !evaluations;
-  $('questions-nav').classList.toggle('active', !evaluations);
-  $('evaluations-nav').classList.toggle('active', evaluations);
-  if (evaluations) {
+  for (const [name, section, link] of [['questoes', 'teacher-view', 'questions-nav'], ['avaliacoes', 'evaluations-view', 'evaluations-nav'], ['relatorios', 'reports-view', 'reports-nav']]) {
+    $(section).hidden = view !== name;
+    $(link).classList.toggle('active', view === name);
+  }
+  if (view === 'avaliacoes') {
     if (typeof loadEvaluations === 'function') loadEvaluations();
+  } else if (view === 'relatorios') {
+    if (typeof loadRelatorios === 'function') loadRelatorios();
   } else loadQuestions();
 }
 
-window.addEventListener('hashchange', () => navigate(location.hash === '#avaliacoes' ? 'avaliacoes' : 'questoes'));
+function viewFromHash() { return ['#avaliacoes', '#relatorios'].includes(location.hash) ? location.hash.slice(1) : 'questoes'; }
+window.addEventListener('hashchange', () => navigate(viewFromHash()));
 
 $('login-form').addEventListener('submit', async (event) => {
   event.preventDefault();
