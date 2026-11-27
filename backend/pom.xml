@@ -50,6 +50,11 @@
         <resources>
             <resource><directory>src/main/resources</directory></resource>
             <resource>
+                <directory>../database</directory>
+                <targetPath>sql</targetPath>
+                <includes><include>relatorios.sql</include></includes>
+            </resource>
+            <resource>
                 <directory>../frontend</directory>
                 <targetPath>static</targetPath>
                 <includes><include>*.html</include><include>*.css</include><include>*.js</include><include>*.svg</include></includes>
