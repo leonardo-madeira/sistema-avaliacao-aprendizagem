@@ -1073,3 +1073,257 @@ legend {
     scroll-behavior:auto!important
   }
 }
+
+.sidebar nav {
+  display: grid;
+  gap: 5px;
+}
+.evaluations-list {
+  padding: 0 27px;
+}
+.evaluation-card {
+  padding: 26px 0;
+  border-bottom: 1px solid var(--line);
+}
+.evaluation-card:last-child {
+  border-bottom: 0;
+}
+.evaluation-card h3 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 25px;
+  margin: 15px 0 12px;
+  overflow-wrap: anywhere;
+}
+.evaluation-description {
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.evaluation-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 20px;
+  font-size: 11px;
+  color: #65775e;
+  margin: 20px 0 12px;
+}
+.evaluation-period {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.evaluation-card .button {
+  font-size: 11px;
+}
+.evaluation-dialog {
+  width: min(800px, calc(100% - 28px));
+}
+.evaluation-fields {
+  margin: 0;
+  width: 100%;
+}
+.evaluation-fields > label:not(:first-child) {
+  margin-top: 20px;
+}
+.evaluation-fields textarea {
+  min-height: 75px;
+}
+.date-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-top: 20px;
+}
+.date-fields input {
+  min-width: 0;
+}
+.builder-section {
+  margin-top: 30px;
+  padding-top: 25px;
+  border-top: 1px solid var(--line);
+}
+.builder-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 13px;
+}
+.builder-heading h3 {
+  font-size: 13px;
+  margin: 0;
+}
+.builder-counter {
+  font-size: 10px;
+  color: #778b6d;
+  text-align: right;
+}
+.selected-questions {
+  margin-bottom: 22px;
+}
+.selected-question {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+}
+.selected-order {
+  font-size: 10px;
+  color: #91a086;
+}
+.selected-question p {
+  flex: 1;
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.selected-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.selected-controls .question-value {
+  width: 83px;
+  padding: 8px 6px;
+  font-size: 12px;
+}
+.points-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-right: 7px;
+}
+.selected-controls .icon-button {
+  font-size: 15px;
+  width: 26px;
+  height: 32px;
+}
+.picker-list {
+  max-height: 245px;
+  overflow-y: auto;
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.picker-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 13px;
+  margin: 0;
+  border-bottom: 1px solid #edf0e8;
+  cursor: pointer;
+}
+.picker-option:last-child {
+  border-bottom: 0;
+}
+.picker-option input[type=checkbox] {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  margin: 2px 0 0;
+  accent-color: var(--green);
+}
+.picker-option span {
+  min-width: 0;
+}
+.picker-option strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.picker-option small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 4px;
+}
+.picker-empty {
+  padding: 16px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.selection-tools {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 8px;
+}
+.selection-tools .text-button {
+  font-size: 10px;
+}
+.evaluation-feedback {
+  padding: 0 28px 16px;
+}
+.evaluation-feedback .text-help {
+  margin: 0;
+}
+.evaluation-feedback .field-help {
+  margin: 0;
+}
+.evaluation-fields:disabled input,
+.evaluation-fields:disabled textarea {
+  background: #f6f7f2;
+  color: #56664d;
+  opacity: 1;
+}
+@media (max-width: 740px) {
+  .sidebar {
+    flex-wrap: wrap;
+  }
+  .sidebar nav {
+    display: flex;
+    order: 3;
+    width: 100%;
+    gap: 7px;
+    margin-top: 2px;
+  }
+  .sidebar nav .nav-item {
+    flex: 1;
+    font-size: 11px;
+    justify-content: center;
+    padding: 8px;
+  }
+  .evaluations-list {
+    padding: 0 17px;
+  }
+  .evaluation-card h3 {
+    font-size: 22px;
+  }
+  .date-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .selected-question {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+  }
+  .selected-controls {
+    grid-column: 2;
+  }
+  .builder-heading {
+    align-items: flex-start;
+  }
+  .evaluation-feedback {
+    padding: 0 21px 16px;
+  }
+  .evaluation-dialog .dialog-footer {
+    flex-wrap: wrap;
+  }
+  #save-evaluation, #publish-evaluation {
+    flex: 1;
+    font-size: 10px;
+    padding: 10px 6px;
+  }
+  #cancel-evaluation {
+    order: 3;
+    width: 100%;
+  }
+}
