@@ -71,3 +71,18 @@ WITH filtradas AS (
 SELECT RANK() OVER (ORDER BY percentual_erros DESC) AS posicao, taxas.*
 FROM taxas ORDER BY percentual_erros DESC, erros DESC, questao_id
 FETCH FIRST :limite ROWS ONLY;
+
+-- relatorio: participacao
+SELECT a.id AS avaliacao_id, a.titulo, a.inicio_em, COUNT(p.id) AS convidados,
+       COALESCE(SUM(CASE WHEN p.entregue_em IS NOT NULL THEN 1 ELSE 0 END), 0) AS entregues,
+       COUNT(p.id) FILTER (WHERE p.entregue_em IS NULL) AS pendentes,
+       COUNT(p.id) FILTER (WHERE p.iniciada_em IS NOT NULL AND p.entregue_em IS NULL) AS em_andamento,
+       100.0 * SUM(CASE WHEN p.entregue_em IS NOT NULL THEN 1 ELSE 0 END) / NULLIF(COUNT(p.id), 0) AS percentual_entregas
+FROM avaliacoes a LEFT JOIN participacoes p ON p.avaliacao_id = a.id
+WHERE a.professor_id = :professorId AND a.status = 'PUBLICADA'
+  AND (CAST(:inicio AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) >= CAST(:inicio AS DATE))
+  AND (CAST(:fim AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= CAST(:fim AS DATE))
+  AND LOWER(a.titulo) LIKE '%' || LOWER(COALESCE(:busca, '')) || '%'
+  AND (:todasAvaliacoes OR a.id IN (:avaliacaoIds))
+GROUP BY a.id, a.titulo, a.inicio_em
+ORDER BY a.inicio_em DESC, a.id DESC;
