@@ -37,9 +37,12 @@ public class SecurityConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers("/", "/index.html", "/app.js", "/avaliacoes.js", "/styles.css", "/favicon.svg",
+                                "/realizacao.js", "/correcao.js",
                                 "/api/auth/csrf", "/api/auth/login").permitAll()
                         .requestMatchers("/api/questoes", "/api/questoes/**").hasRole("PROFESSOR")
                         .requestMatchers("/api/avaliacoes", "/api/avaliacoes/**", "/api/alunos").hasRole("PROFESSOR")
+                        .requestMatchers("/api/correcoes", "/api/correcoes/**").hasRole("PROFESSOR")
+                        .requestMatchers("/api/minhas-avaliacoes", "/api/minhas-avaliacoes/**").hasRole("ALUNO")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
                 .requestCache(cache -> cache.disable())
