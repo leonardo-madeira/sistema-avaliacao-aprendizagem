@@ -1,5 +1,8 @@
 package br.com.avaliacao.api;
 
+import br.com.avaliacao.domain.NaoEncontradoException;
+import br.com.avaliacao.domain.ConflitoException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -14,6 +17,16 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 @RestControllerAdvice
 public class ApiExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
+    @ExceptionHandler(NaoEncontradoException.class)
+    public ProblemDetail naoEncontrado(NaoEncontradoException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+    }
+
+    @ExceptionHandler(ConflitoException.class)
+    public ProblemDetail conflito(ConflitoException exception) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, exception.getMessage());
+    }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ProblemDetail regraInvalida(IllegalArgumentException exception) {
