@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="/styles.css">
   <script src="/app.js" defer></script>
   <script src="/avaliacoes.js" defer></script>
+  <script src="/realizacao.js" defer></script>
 </head>
 <body>
   <div id="boot" class="boot" role="status">Preparando seu espaço…</div>
@@ -66,7 +67,10 @@
           <div id="evaluations-list" class="evaluations-list" aria-live="polite"></div>
         </section>
       </section>
-      <section id="student-view" class="student-view" hidden><p class="eyebrow">SEU ESPAÇO DE APRENDIZAGEM</p><h1>Olá, <span id="student-name"></span>.</h1><p class="muted">Você entrou na sua conta de aluno.</p><div class="student-notice"><span aria-hidden="true">✳</span><h2>Cada pergunta, uma descoberta.</h2><p>O banco de questões é um espaço exclusivo dos professores.</p></div></section>
+      <section id="student-view" hidden>
+        <header class="page-header"><div><p class="eyebrow">OLÁ, <span id="student-name"></span></p><h1>Suas avaliações<span>.</span></h1><p class="muted">Uma nova oportunidade de mostrar o que você aprendeu.</p></div></header>
+        <section class="collection" aria-label="Avaliações do aluno"><div class="collection-header"><div><h2>Seu percurso de aprendizagem</h2><p id="student-evaluations-caption" class="muted" aria-live="polite"></p></div><button id="refresh-student-evaluations" class="button quiet" type="button">Atualizar</button></div><p id="student-evaluations-error" class="form-error" role="alert" hidden></p><div id="student-evaluations-list" class="evaluations-list" aria-live="polite"></div></section>
+      </section>
     </main>
   </div>
 
@@ -104,6 +108,12 @@
       </fieldset>
       <div class="evaluation-feedback"><p id="evaluation-readonly" class="text-help" hidden>Avaliação publicada. As questões, os valores e os participantes estão definidos.</p><p id="evaluation-publish-help" class="muted field-help">Depois de publicar, as questões, a pontuação e os participantes não poderão ser alterados.</p><p id="evaluation-error" class="form-error" role="alert" hidden></p></div>
       <footer class="dialog-footer"><button id="cancel-evaluation" class="button quiet" type="button">Cancelar</button><button id="save-evaluation" class="button quiet" type="submit" data-action="save">Salvar rascunho</button><button id="publish-evaluation" class="button primary" type="submit" data-action="publish">Publicar avaliação ↗</button></footer>
+    </form>
+  </dialog>
+  <dialog id="prova-dialog" class="evaluation-dialog" aria-labelledby="prova-title">
+    <form id="prova-form"><header class="dialog-header"><div><p class="eyebrow">SEU MOMENTO DE APRENDER</p><h2 id="prova-title"></h2></div><button id="close-prova" class="icon-button" type="button" aria-label="Fechar avaliação">✕</button></header>
+      <div class="dialog-body"><p id="prova-description" class="muted"></p><p id="prova-period" class="evaluation-period"></p><fieldset id="prova-fields"><div id="prova-questions"></div></fieldset><p id="prova-progress" class="text-help"></p><p id="prova-error" class="form-error" role="alert" hidden></p><p id="prova-message" class="save-message" role="status" hidden></p><p id="prova-final-help" class="muted field-help">Após entregar, você não poderá alterar as respostas. Questões em branco valem zero.</p></div>
+      <footer class="dialog-footer"><button id="cancel-prova" class="button quiet" type="button">Fechar</button><button id="save-prova" class="button quiet" type="submit" data-action="save">Salvar respostas</button><button id="submit-prova" class="button primary" type="submit" data-action="deliver">Entregar avaliação ↗</button></footer>
     </form>
   </dialog>
   <div id="toast" class="toast" role="status" hidden></div>

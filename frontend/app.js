@@ -52,6 +52,8 @@ function showLogin() {
   if ($('question-dialog').open) $('question-dialog').close();
   if ($('evaluation-dialog').open) $('evaluation-dialog').close();
   if (typeof resetEvaluations === 'function') resetEvaluations();
+  if (typeof resetRealizacao === 'function') resetRealizacao();
+  if (typeof resetCorrecao === 'function') resetCorrecao();
   $('questions-list').replaceChildren();
   $('senha').value = '';
 }
@@ -74,6 +76,7 @@ function showWorkspace(user) {
   $('student-nav').hidden = teacher;
   $('student-name').textContent = user.nome.split(' ')[0];
   if (teacher) navigate(location.hash === '#avaliacoes' ? 'avaliacoes' : 'questoes');
+  else if (typeof loadMinhasAvaliacoes === 'function') loadMinhasAvaliacoes();
 }
 
 function navigate(view) {
