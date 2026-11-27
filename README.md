@@ -183,3 +183,151 @@ export TEST_DATABASE_PASSWORD="$DB_PASSWORD"
 ```
 
 Cada teste de integração prepara um schema isolado e o remove ao terminar. A validação realizada com PostgreSQL teve **72 testes aprovados**, cobrindo domínio, autenticação, autorização, cadastros, montagem, publicação, respostas, correção, transações e relatórios. As interfaces também foram verificadas em Chromium, em desktop e celular.
+
+## Relatórios
+
+Disponíveis para professores na opção **Relatórios**. Cada consulta é limitada às avaliações publicadas do professor autenticado. Os filtros comuns são período de início da avaliação, busca por título e seleção de avaliações. As datas são inclusivas e consideradas no fuso `America/Sao_Paulo`.
+
+A fonte executada pelo backend é [database/relatorios.sql](database/relatorios.sql). As consultas abaixo são as mesmas seções desse arquivo. Os parâmetros `:nome` são vinculados pelo DAO JDBC; não são concatenados com valores fornecidos pelo usuário. Para executar as três consultas diretamente pelo cliente `psql`, na raiz e com a conexão do passo 2 configurada:
+
+```bash
+psql -v ON_ERROR_STOP=1 -f database/relatorios.sql
+```
+
+O cabeçalho define os parâmetros demonstrativos, incluindo professor de ID 1 e ausência de filtro de período. Na aplicação, o professor é obtido da sessão. As imagens abaixo mostram resultados da carga de demonstração.
+
+### 1. Desempenho por avaliação
+
+**Objetivo:** Comparar as médias e identificar avaliações com correções pendentes. A tabela mostra convidados, entregas, notas consideradas, pendências, média, pontuação máxima e notas extremas. O gráfico mostra a média percentual de cada avaliação e uma referência global ponderada pela quantidade de notas consideradas.
+
+Só entram nas médias as entregas com correção concluída. Ausência de notas aparece como “Sem notas”; uma nota zero corrigida entra no cálculo. A faixa percentual e a quantidade mínima de notas filtram o desempenho sem alterar as contagens de convidados e entregas.
+
+![Tabela e gráfico de desempenho por avaliação](docs/screenshots/relatorio-desempenho.png)
+
+**Recursos SQL:** JOIN, LEFT JOIN, COUNT, AVG, SUM, MIN, MAX, GROUP BY, HAVING, subconsultas, ORDER BY e filtros por datas, faixa de notas, IN e LIKE.
+
+<details>
+<summary>Consulta SQL completa</summary>
+
+```sql
+WITH filtradas AS (
+    SELECT a.id, a.titulo, a.inicio_em
+    FROM avaliacoes a
+    WHERE a.professor_id = :professorId AND a.status = 'PUBLICADA'
+      AND (CAST(:inicio AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) >= CAST(:inicio AS DATE))
+      AND (CAST(:fim AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= CAST(:fim AS DATE))
+      AND LOWER(a.titulo) LIKE '%' || LOWER(COALESCE(:busca, '')) || '%'
+      AND (:todasAvaliacoes OR a.id IN (:avaliacaoIds))
+), dados AS (
+    SELECT p.id, p.avaliacao_id, p.entregue_em, rp.nota_total,
+           100.0 * rp.nota_total / NULLIF(rp.valor_total, 0) AS percentual
+    FROM participacoes p
+    JOIN filtradas f ON f.id = p.avaliacao_id
+    JOIN resultados_participacoes rp ON rp.participacao_id = p.id
+), resumo AS (
+    SELECT f.id AS avaliacao_id, f.titulo, f.inicio_em,
+           (SELECT COALESCE(SUM(aq.valor), 0) FROM avaliacao_questoes aq WHERE aq.avaliacao_id = f.id) AS valor_total,
+           COUNT(d.id) AS convidados,
+           COUNT(d.id) FILTER (WHERE d.entregue_em IS NOT NULL) AS entregues,
+           COUNT(d.id) FILTER (WHERE d.entregue_em IS NOT NULL AND d.nota_total IS NULL) AS aguardando_correcao,
+           COUNT(d.id) FILTER (WHERE d.percentual BETWEEN :notaMin AND :notaMax) AS notas_consideradas,
+           AVG(d.nota_total) FILTER (WHERE d.percentual BETWEEN :notaMin AND :notaMax) AS media_nota,
+           AVG(d.percentual) FILTER (WHERE d.percentual BETWEEN :notaMin AND :notaMax) AS media_percentual,
+           MIN(d.nota_total) FILTER (WHERE d.percentual BETWEEN :notaMin AND :notaMax) AS menor_nota,
+           MAX(d.nota_total) FILTER (WHERE d.percentual BETWEEN :notaMin AND :notaMax) AS maior_nota
+    FROM filtradas f LEFT JOIN dados d ON d.avaliacao_id = f.id
+    GROUP BY f.id, f.titulo, f.inicio_em
+    HAVING COUNT(d.id) FILTER (WHERE d.percentual BETWEEN :notaMin AND :notaMax) >= :minimoCorrigidas
+)
+SELECT resumo.*,
+       (SELECT SUM(r.media_percentual * r.notas_consideradas) / NULLIF(SUM(r.notas_consideradas), 0)
+        FROM resumo r) AS media_geral_percentual
+FROM resumo ORDER BY inicio_em DESC, avaliacao_id DESC;
+```
+
+</details>
+
+### 2. Questões objetivas mais erradas
+
+**Objetivo:** Identificar questões que merecem revisão pedagógica. A tabela mostra posição, questão, oportunidades, respostas registradas, questões em branco, erros e percentual de erros. O gráfico ordena as questões pela taxa de erro.
+
+Uma oportunidade é a presença da questão em uma avaliação entregue por um aluno. Questões em branco contam como erro, e tentativas ainda não entregues ficam de fora. Se a questão for reutilizada, os dados são agregados entre as avaliações filtradas. Empates mantêm a mesma posição por RANK; o limite de linhas e a quantidade mínima de entregas são configuráveis.
+
+![Tabela e gráfico de questões objetivas mais erradas](docs/screenshots/relatorio-questoes.png)
+
+**Recursos SQL:** JOIN, LEFT JOIN, COUNT, SUM, CASE, GROUP BY, HAVING, RANK, ORDER BY, FETCH FIRST e filtros por datas, IN e LIKE.
+
+<details>
+<summary>Consulta SQL completa</summary>
+
+```sql
+WITH filtradas AS (
+    SELECT a.id FROM avaliacoes a
+    WHERE a.professor_id = :professorId AND a.status = 'PUBLICADA'
+      AND (CAST(:inicio AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) >= CAST(:inicio AS DATE))
+      AND (CAST(:fim AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= CAST(:fim AS DATE))
+      AND LOWER(a.titulo) LIKE '%' || LOWER(COALESCE(:busca, '')) || '%'
+      AND (:todasAvaliacoes OR a.id IN (:avaliacaoIds))
+), contagens AS (
+    SELECT q.id AS questao_id, q.enunciado, COUNT(p.id) AS oportunidades,
+           COUNT(r.id) AS respondidas, COUNT(p.id) - COUNT(r.id) AS em_branco,
+           SUM(CASE WHEN r.id IS NULL OR r.nota_obtida = 0 THEN 1 ELSE 0 END) AS erros
+    FROM filtradas f JOIN avaliacao_questoes aq ON aq.avaliacao_id = f.id
+    JOIN questoes q ON q.id = aq.questao_id
+    JOIN tipos_questao tq ON tq.id = q.tipo_questao_id AND tq.codigo = 'MULTIPLA_ESCOLHA'
+    JOIN participacoes p ON p.avaliacao_id = f.id AND p.entregue_em IS NOT NULL
+    LEFT JOIN respostas r ON r.participacao_id = p.id AND r.avaliacao_questao_id = aq.id
+    GROUP BY q.id, q.enunciado
+    HAVING COUNT(p.id) >= :minimoRespostas
+), taxas AS (
+    SELECT contagens.*, 100.0 * erros / oportunidades AS percentual_erros FROM contagens
+)
+SELECT RANK() OVER (ORDER BY percentual_erros DESC) AS posicao, taxas.*
+FROM taxas ORDER BY percentual_erros DESC, erros DESC, questao_id
+FETCH FIRST :limite ROWS ONLY;
+```
+
+</details>
+
+### 3. Participação e pendências
+
+**Objetivo:** Acompanhar o andamento das avaliações. A tabela mostra convidados, entregas, pendentes, tentativas em andamento e percentual de entregas. O gráfico empilhado compara entregues e pendentes em cada prova.
+
+Pendentes incluem alunos que não começaram e os que ainda estão respondendo. Avaliações sem entregas ou participantes também aparecem; sem participantes, o percentual é indefinido e não é tratado como zero. A contagem é feita por participação, sem multiplicá-la pelo número de questões.
+
+![Tabela e gráfico de participação e pendências](docs/screenshots/relatorio-participacao.png)
+
+**Recursos SQL:** LEFT JOIN, COUNT, SUM, CASE, GROUP BY, ORDER BY, NULLIF e filtros por datas, IN e LIKE.
+
+<details>
+<summary>Consulta SQL completa</summary>
+
+```sql
+SELECT a.id AS avaliacao_id, a.titulo, a.inicio_em, COUNT(p.id) AS convidados,
+       COALESCE(SUM(CASE WHEN p.entregue_em IS NOT NULL THEN 1 ELSE 0 END), 0) AS entregues,
+       COUNT(p.id) FILTER (WHERE p.entregue_em IS NULL) AS pendentes,
+       COUNT(p.id) FILTER (WHERE p.iniciada_em IS NOT NULL AND p.entregue_em IS NULL) AS em_andamento,
+       100.0 * SUM(CASE WHEN p.entregue_em IS NOT NULL THEN 1 ELSE 0 END) / NULLIF(COUNT(p.id), 0) AS percentual_entregas
+FROM avaliacoes a LEFT JOIN participacoes p ON p.avaliacao_id = a.id
+WHERE a.professor_id = :professorId AND a.status = 'PUBLICADA'
+  AND (CAST(:inicio AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) >= CAST(:inicio AS DATE))
+  AND (CAST(:fim AS DATE) IS NULL OR CAST(a.inicio_em AT TIME ZONE 'America/Sao_Paulo' AS DATE) <= CAST(:fim AS DATE))
+  AND LOWER(a.titulo) LIKE '%' || LOWER(COALESCE(:busca, '')) || '%'
+  AND (:todasAvaliacoes OR a.id IN (:avaliacaoIds))
+GROUP BY a.id, a.titulo, a.inicio_em
+ORDER BY a.inicio_em DESC, a.id DESC;
+```
+
+</details>
+
+### Cobertura dos recursos exigidos
+
+| Recurso | Relatórios que demonstram o uso |
+|---|---|
+| Junção interna | Desempenho e questões mais erradas |
+| Junção externa | Os três relatórios |
+| COUNT, AVG, SUM e GROUP BY | Desempenho; contagens adicionais em erros e participação |
+| HAVING | Desempenho e questões mais erradas |
+| Subconsulta | Desempenho, incluindo referência global ponderada |
+| Ordenação e ranking | ORDER BY nos três; RANK e FETCH FIRST em questões mais erradas |
+| Datas, faixas, IN e LIKE | Período, faixa de notas, avaliações selecionadas e busca por título |
